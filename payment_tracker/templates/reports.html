@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Reports</title>
+        <link rel="stylesheet" href="static/css/styles.css">
+        <link rel="stylesheet" href="static/css/reports.css">
+        <!-- Add Font Awesome for icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <!-- Add Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    </head>
+    <body>
+        <nav class="nav-bar">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <a href="#" class="nav-item">Mr. Expenser</a>
+                <a href="{{ url_for('index') }}" class="nav-item">Members</a>
+                <a href="{{ url_for('payments') }}" class="nav-item">Payments</a>
+                <a href="{{ url_for('reports') }}" class="nav-item active">Reports</a>
+            </div>
+        </nav>
+
+        <!-- Summary Cards -->
+        <div class="dashboard">
+            <!-- Members List Card - Full Width in its own row -->
+            <div class="card full-width members-card">
+                <i class="fas fa-users card-icon"></i>
+                <div class="card-title">TOTAL MEMBERS</div>
+                <div class="members-list">
+                    {% for member in all_members %}
+                    <div class="member-item" onclick="showMemberDetails({{ member.id }})">
+                        <div class="member-info">
+                            <span class="member-id">#{{ member.id }}</span>
+                            <span class="member-name">{{ member.name }}</span>
+                        </div>
+                        <span class="view-details">View Details →</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Stats Cards - In one row -->
+        <div class="stats-dashboard">
+            <!-- Total Collected Card -->
+            <div class="stats-card">
+                <i class="fas fa-money-bill-wave card-icon"></i>
+                <div class="card-title">TOTAL COLLECTED</div>
+                <div class="card-value">₹{{ total_collected }}</div>
+            </div>
+
+            <!-- Pending Payments Card -->
+            <div class="stats-card">
+                <i class="fas fa-clock card-icon"></i>
+                <div class="card-title">PENDING PAYMENTS</div>
+                <div class="card-value">₹{{ pending_payments }}</div>
+            </div>
+
+            <!-- Overdue Payments Card -->
+            <div class="stats-card">
+                <i class="fas fa-exclamation-circle card-icon"></i>
+                <div class="card-title">OVERDUE PAYMENTS</div>
+                <div class="card-value">₹{{ overdue_payments }}</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Monthly Revenue Trend</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Payment Status Breakdown</h3>
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="transactions-list">
+            <h3>Recent Transactions</h3>
+            <div class="table-responsive">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Member Name</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in recent_transactions %}
+                        <tr class="transaction-item">
+                            <td>{{ transaction.date }}</td>
+                            <td>{{ transaction.member }}</td>
+                            <td>₹{{ transaction.amount }}</td>
+                            <td>
+                                <span class="status-badge {{ 'status-paid' if transaction.status == 'Paid' else 'status-pending' }}">
+                                    {{ transaction.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button onclick="editTransaction({{ transaction.id }})" class="edit-btn">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Edit Transaction Modal -->
+        <div id="editTransactionModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal" id="closeEditModal">&times;</span>
+                <h2>Edit Transaction</h2>
+                <form id="editTransactionForm" class="edit-transaction-form">
+                    <input type="hidden" id="editTransactionId">
+                    <div class="form-group">
+                        <label for="editMember">Member:</label>
+                        <select id="editMember" required>
+                            {% for member in all_members %}
+                            <option value="{{ member.id }}">{{ member.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDate">Date:</label>
+                        <input type="date" id="editDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAmount">Amount:</label>
+                        <input type="number" id="editAmount" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">Save Changes</button>
+                        <button type="button" class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Member Details Modal -->
+<div id="memberDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <div class="member-details">
+            <h2 id="memberName"></h2>
+            
+            <!-- Payment Summary Card -->
+            <div class="summary-card">
+                <div class="summary-item">
+                    <span class="label">Total Due:</span>
+                    <span class="value">₹<span id="totalDue"></span></span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Total Paid:</span>
+                    <span class="value">₹<span id="totalPaid"></span></span>
+                </div>
+            </div>
+
+            <!-- Payment Chart -->
+            <div class="payment-chart-container">
+                <canvas id="memberPaymentChart"></canvas>
+            </div>
+
+            <!-- Payment History Section -->
+            <div class="payment-history-section">
+                <div class="history-header">
+                    <h3>Payment History</h3>
+                    <div class="history-actions">
+                        <div class="date-filters">
+                            <input type="date" id="historyDateFrom" class="date-input">
+                            <span>to</span>
+                            <input type="date" id="historyDateTo" class="date-input">
+                            <button onclick="filterPaymentHistory()" class="filter-btn">Filter</button>
+                        </div>
+                        <button onclick="openPaymentHistoryInNewTab()" class="view-all-btn">
+                            <i class="fas fa-external-link-alt"></i> View Full History
+                        </button>
+                    </div>
+                </div>
+                <div id="paymentHistory" class="payment-history">
+                    <table class="payment-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Member</th>
+                                <th>Amount Due</th>
+                                <th>Amount Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+        <script>
+            // Pass Python variables to JavaScript
+            const revenueLabels = {{ revenue_labels|tojson }};
+            const revenueData = {{ revenue_data|tojson }};
+            const statusData = {{ status_data|tojson }};
+        </script>
+        <script src="static/js/reports.js"></script>
+    </body>
+</html>
