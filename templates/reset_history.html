@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset History</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #070A17;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .nav-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background-color: #444;
+        }
+
+        .nav-item.active {
+            background-color: #8A2BE2;
+        }
+
+        .nav-item.active:hover {
+            background-color: #9d3ff5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        #membersTable tbody tr:nth-child(odd) {
+            background-color: #0d1326;
+        }
+
+        #membersTable tbody tr:nth-child(even) {
+            background-color: #161c33;
+        }
+
+        tr:hover {
+            background-color: #1f2747;
+            transition: background-color 0.2s ease;
+        }
+
+        th {
+            background-color: #161c33;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        h2 {
+            color: #888;
+            margin: 0 0 20px 0;
+            text-align: center;
+        }
+
+        .history-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .history-btn:hover {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <a href="#" class="nav-item">Mr. Expenser</a>
+            <a href="{{ url_for('index') }}" class="nav-item">Members</a>
+            <a href="{{ url_for('payments') }}" class="nav-item active">Payments</a>
+            <a href="{{ url_for('reports') }}" class="nav-item">Reports</a>
+        </div>
+    </nav>
+
+    <h2>Reset History</h2>
+    
+    <table id="membersTable">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Amount Reset</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reset in resets %}
+            <tr>
+                <td>{{ reset.reset_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>₹{{ "%.2f"|format(reset.amount_reset) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html> 

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History - {{ member.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .payment-history-container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .member-info {
+            background-color: #161c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .member-info h2 {
+            margin: 0;
+            color: #fff;
+        }
+
+        .member-info .details {
+            display: flex;
+            gap: 40px;
+            margin-top: 15px;
+        }
+
+        .member-info .detail-item {
+            color: #8A2BE2;
+        }
+
+        .detail-item .label {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .payment-history-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #161c33;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .payment-history-table th,
+        .payment-history-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #2a2f4a;
+        }
+
+        .payment-history-table th {
+            background-color: #1a1f35;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .payment-history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .payment-history-table tbody tr:hover {
+            background-color: #1a2142;
+        }
+
+        .back-button {
+            background: none;
+            border: 1px solid #8A2BE2;
+            color: #8A2BE2;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            width: fit-content;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #8A2BE2;
+            color: white;
+        }
+
+        .date-filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .date-input {
+            background-color: #161c33;
+            border: 1px solid #2a2f4a;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+        }
+
+        .filter-btn {
+            background-color: #8A2BE2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-history-container">
+        <a href="{{ url_for('reports') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Reports
+        </a>
+
+        <div class="member-info">
+            <h2>{{ member.name }}'s Payment History</h2>
+            <div class="details">
+                <div class="detail-item">
+                    <div class="label">Total Due</div>
+                    <div>₹{{ "%.2f"|format(member.amount_due) }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="label">Total Paid</div>
+                    <div>₹{{ "%.2f"|format(total_paid) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="date-filters">
+            <input type="date" id="fromDate" class="date-input">
+            <span>to</span>
+            <input type="date" id="toDate" class="date-input">
+            <button onclick="filterPayments()" class="filter-btn">Filter</button>
+        </div>
+
+        <table class="payment-history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Member</th>
+                    <th>Amount Due</th>
+                    <th>Amount Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date.strftime('%d-%m-%Y') }}</td>
+                    <td>{{ member.name }}</td>
+                    <td>₹{{ "%.2f"|format(payment.original_amount_due) }}</td>
+                    <td>₹{{ "%.2f"|format(payment.amount_paid) }}</td>
+                </tr>
+                {% endfor %}
+                {% if not payments %}
+                <tr>
+                    <td colspan="4" style="text-align: center;">No payment records found</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filterPayments() {
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            if (fromDate && toDate) {
+                window.location.href = `${window.location.pathname}?from=${fromDate}&to=${toDate}`;
+            }
+        }
+    </script>
+</body>
+</html>
