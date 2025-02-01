@@ -574,5 +574,8 @@ def member_payment_history(member_id):
                          payments=payments,
                          total_paid=total_paid)
 
+#For Gunicorn 
+application = app
+
 if __name__ == '__main__':
     app.run(debug=True)
