@@ -30,7 +30,7 @@ class Member(db.Model):
 # Each payment details
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id', ondelete="CASCADE"))
     payment_date = db.Column(db.DateTime, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     original_amount_due = db.Column(db.Float, nullable=False)  # Add this column
