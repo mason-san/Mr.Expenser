@@ -26,6 +26,8 @@ class Member(db.Model):
     original_amount = db.Column(db.Float, nullable=False)  # Store the original amount
     payment_interval = db.Column(db.Integer, default=30)  # Default 30 days
     additional_details = db.Column(db.Text)
+    # Add this relationship to cascade deletions to Payment records
+    payments = db.relationship('Payment', cascade="all, delete-orphan", passive_deletes=True)
 
 # Each payment details
 class Payment(db.Model):
