@@ -92,13 +92,13 @@ def add_member():
         amount = float(data['amount_due'])
         current_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # Set amount_due to 0 if payment date is in the future
-        initial_amount_due = 0 if payment_date > current_date else amount
+        # Always start with zero amount due; let the index route update it when the payment date has passed
+        initial_amount_due = 0
         
         new_member = Member(
             name=data['name'],
             payment_date=payment_date,
-            amount_due=initial_amount_due,  # Use calculated initial amount
+            amount_due=initial_amount_due,  # Use calculated (zero) initial amount
             original_amount=amount,  # Always store the full amount
             payment_interval=data.get('payment_interval', 30),
             additional_details=data['additional_details']
