@@ -205,7 +205,6 @@
                 <div style="display: flex; align-items: center; gap: 20px;">
                     <a href="#" class="nav-item">Mr. Expenser</a>
                     <a href="{{ url_for('index') }}" class="nav-item active">Members</a>
-                    <a href="{{ url_for('payments') }}" class="nav-item">Payments</a>
                     <a href="{{ url_for('reports') }}" class="nav-item">Reports</a>
                 </div>
                 <button onclick="openAddMemberForm()" style="font-family: Arial, sans-serif; padding: 10px 20px; border: none; border-radius: 5px; background-color: #8A2BE2; color: white; cursor: pointer;">
@@ -258,17 +257,20 @@
                 </thead>
                 <tbody>
                     {% for member in members.items %}
-                    <tr class="{{ 'paid' if member.amount_due == 0 else 'unpaid' }}">
+                    <tr class="{{ 'paid' if member.amount_due == 0 else 'unpaid' }}"
+                        onclick="openMemberPaymentModal(this)"
+                        data-member-id="{{ member.id }}"
+                        data-member-name="{{ member.name }}">
                         <td>{{ member.id }}</td>
                         <td>{{ member.name }}</td>
                         <td>{{ member.payment_date.strftime('%d-%m-%Y') }}</td>
                         <td data-value="{{ member.amount_due }}">₹{{ "%.2f"|format(member.amount_due) }}</td>
                         <td>{{ member.additional_details }}</td>
-                        <td class="{{ 'status-paid' if member.amount_due == 0 else 'status-unpaid' }}">
-                            {{ 'Paid' if member.amount_due == 0 else 'Unpaid' }}
+                        <td class="{{ 'status-paid' if member.amount_due <= 0 else 'status-unpaid' }}">
+                            {{ 'Paid' if member.amount_due <= 0 else 'Unpaid' }}
                         </td>
                         <td>
-                            <button onclick="openEditMemberForm({{ member.id }})" style="background: none; border: none; cursor: pointer;">
+                            <button onclick="event.stopPropagation(); openEditMemberForm({{ member.id }})" style="background: none; border: none; cursor: pointer;">
                                 ✏️
                             </button>
                         </td>
@@ -409,13 +411,74 @@
                 }
             }
         }
+
+        function openMemberPaymentModal(el) {
+            // Get the member id and name from the clicked row
+            var memberId = el.getAttribute('data-member-id');
+            var memberName = el.getAttribute('data-member-name');
+            document.getElementById('payment_member_id').value = memberId;
+
+            // Set default date to current date (formatted as YYYY-MM-DD)
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('payment_date_modal').value = today;
+
+            // Open the modal with animation
+            var modal = document.getElementById('memberPaymentModal');
+            modal.style.display = 'block';
+            setTimeout(function(){
+                modal.classList.add('active');
+            }, 10);
+        }
+
+        function closeMemberPaymentModal() {
+            var modal = document.getElementById('memberPaymentModal');
+            modal.classList.remove('active');
+            setTimeout(function(){
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('memberPaymentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const memberId = document.getElementById('payment_member_id').value;
+                const paymentDate = document.getElementById('payment_date_modal').value;
+                const paymentAmount = document.getElementById('payment_amount').value;
+                const remarks = document.getElementById('payment_remarks').value;
+                
+                const payload = {
+                    member_id: memberId,
+                    payment_date: paymentDate,
+                    amount_paid: parseFloat(paymentAmount),
+                    remarks: remarks
+                };
+                
+                fetch('/update_payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        closeMemberPaymentModal();
+                        location.reload();
+                    } else {
+                        alert('Payment update failed: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+            });
+        });
         </script>
 
         <!-- Add Member Modal -->
         <div id="addMemberModal" class="modal">
             <div class="modal-content">
                 <button class="close-modal" onclick="closeAddMemberForm()">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times" style="color: white;"></i>
                 </button>
                 <h2 style="color: #888; margin: 0 0 20px 0; text-align: center;">Add Member</h2>
                 <form id="addMemberForm">
@@ -550,7 +613,7 @@
                         <textarea id="edit_additional_details" name="additional_details" style="width: 100%; padding: 8px; margin-top: 5px; background-color: #333; border: none; color: white; border-radius: 3px;"></textarea>
                     </div>
                     <div style="display: flex; justify-content: space-between; gap: 10px;">              
-                        <button type="submit" style="font-family: Arial, sans-serif; background-color: green;">Update</button>
+                        <button type="submit" class="update-button">Update</button>
                         <button type="button" onclick="closeEditMemberForm()" style="font-family: Arial, sans-serif; background-color: #333;">Cancel</button>
                         <button type="button" onclick="deleteMember()" style="font-family: Arial, sans-serif; background-color: red;">Delete</button>
                     </div>
@@ -644,14 +707,45 @@
                 .then(response => response.json())
                 .then(data => {
                     if(data.success) {
+                        closeEditMemberForm(); // Close modal only after a successful update
                         location.reload();
                     } else {
                         alert('Error updating member: ' + data.error);  // Show error message
                     }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
                 });
-                
-                closeEditMemberForm();
             });
         </script>
+
+        <!-- Member Payment Modal -->
+        <div id="memberPaymentModal" class="modal">
+            <div class="modal-content">
+                <button class="close-modal" onclick="closeMemberPaymentModal()">
+                    <i class="fas fa-times" style="color: white;"></i>
+                </button>
+                <h2 style="color: #888; margin: 0 0 20px 0; text-align: center;">Update Payment</h2>
+                <form id="memberPaymentForm">
+                    <input type="hidden" id="payment_member_id">
+                    <div style="margin-bottom: 15px;">
+                        <label for="payment_date_modal">Date:</label>
+                        <input type="date" id="payment_date_modal" name="payment_date" required style="width: 100%; padding: 8px; margin-top: 5px; background-color: #333; border: none; color: white; border-radius: 3px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="payment_amount">Amount:</label>
+                        <input type="number" id="payment_amount" name="payment_amount" required step="0.01" style="width: 100%; padding: 8px; margin-top: 5px; background-color: #333; border: none; color: white; border-radius: 3px;" placeholder="Enter amount paid">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="payment_remarks">Remarks:</label>
+                        <textarea id="payment_remarks" name="payment_remarks" style="width: 100%; padding: 8px; margin-top: 5px; background-color: #333; border: none; color: white; border-radius: 3px;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 10px;">
+                        <button type="submit" class="update-button" style="background-color: green;">Update</button>
+                        <button type="button" onclick="closeMemberPaymentModal()" class="update-button" style="background-color: red;">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </body>
 </html>

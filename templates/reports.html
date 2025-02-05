@@ -16,7 +16,6 @@
             <div style="display: flex; align-items: center; gap: 20px;">
                 <a href="#" class="nav-item">Mr. Expenser</a>
                 <a href="{{ url_for('index') }}" class="nav-item">Members</a>
-                <a href="{{ url_for('payments') }}" class="nav-item">Payments</a>
                 <a href="{{ url_for('reports') }}" class="nav-item active">Reports</a>
             </div>
         </nav>
@@ -55,25 +54,6 @@
                 <i class="fas fa-clock card-icon"></i>
                 <div class="card-title">PENDING PAYMENTS</div>
                 <div class="card-value">₹{{ pending_payments }}</div>
-            </div>
-
-            <!-- Overdue Payments Card -->
-            <div class="stats-card">
-                <i class="fas fa-exclamation-circle card-icon"></i>
-                <div class="card-title">OVERDUE PAYMENTS</div>
-                <div class="card-value">₹{{ overdue_payments }}</div>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="charts-container">
-            <div class="chart-card">
-                <h3>Monthly Revenue Trend</h3>
-                <canvas id="revenueChart"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Payment Status Breakdown</h3>
-                <canvas id="statusChart"></canvas>
             </div>
         </div>
 
@@ -146,62 +126,57 @@
         </div>
 
         <!-- Add Member Details Modal -->
-<div id="memberDetailsModal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <div class="member-details">
-            <h2 id="memberName"></h2>
-            
-            <!-- Payment Summary Card -->
-            <div class="summary-card">
-                <div class="summary-item">
-                    <span class="label">Total Due:</span>
-                    <span class="value">₹<span id="totalDue"></span></span>
-                </div>
-                <div class="summary-item">
-                    <span class="label">Total Paid:</span>
-                    <span class="value">₹<span id="totalPaid"></span></span>
-                </div>
-            </div>
-
-            <!-- Payment Chart -->
-            <div class="payment-chart-container">
-                <canvas id="memberPaymentChart"></canvas>
-            </div>
-
-            <!-- Payment History Section -->
-            <div class="payment-history-section">
-                <div class="history-header">
-                    <h3>Payment History</h3>
-                    <div class="history-actions">
-                        <div class="date-filters">
-                            <input type="date" id="historyDateFrom" class="date-input">
-                            <span>to</span>
-                            <input type="date" id="historyDateTo" class="date-input">
-                            <button onclick="filterPaymentHistory()" class="filter-btn">Filter</button>
+        <div id="memberDetailsModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div class="member-details">
+                    <h2 id="memberName"></h2>
+                    
+                    <!-- Payment Summary Card -->
+                    <div class="summary-card">
+                        <div class="summary-item">
+                            <span class="label">Total Due:</span>
+                            <span class="value">₹<span id="totalDue"></span></span>
                         </div>
-                        <button onclick="openPaymentHistoryInNewTab()" class="view-all-btn">
-                            <i class="fas fa-external-link-alt"></i> View Full History
-                        </button>
+                        <div class="summary-item">
+                            <span class="label">Total Paid:</span>
+                            <span class="value">₹<span id="totalPaid"></span></span>
+                        </div>
                     </div>
-                </div>
-                <div id="paymentHistory" class="payment-history">
-                    <table class="payment-history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Member</th>
-                                <th>Amount Due</th>
-                                <th>Amount Paid</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+    
+                    <!-- Payment History Section -->
+                    <div class="payment-history-section">
+                        <div class="history-header">
+                            <h3>Payment History</h3>
+                            <div class="history-actions">
+                                <div class="date-filters">
+                                    <input type="date" id="historyDateFrom" class="date-input">
+                                    <span>to</span>
+                                    <input type="date" id="historyDateTo" class="date-input">
+                                    <button onclick="filterPaymentHistory()" class="filter-btn">Filter</button>
                                 </div>
+                                <button onclick="openPaymentHistoryInNewTab()" class="view-all-btn">
+                                    <i class="fas fa-external-link-alt"></i> View Full History
+                                </button>
                             </div>
+                        </div>
+                        <div id="paymentHistory" class="payment-history">
+                            <table class="payment-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Member</th>
+                                        <th>Amount</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
         <script>
             // Pass Python variables to JavaScript

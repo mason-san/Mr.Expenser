@@ -19,8 +19,6 @@ function showMemberDetails(memberId) {
             // Display payment history
             displayPaymentHistory(data.payments);
             
-            // Create/Update payment chart
-            updatePaymentChart(data.payments);
 
             // Show modal with animation
             modal.style.display = 'block';
@@ -29,39 +27,44 @@ function showMemberDetails(memberId) {
 }
 
 function displayPaymentHistory(payments, fromDate = null, toDate = null) {
-    // Sort payments by date in descending order
-    const sortedPayments = [...payments].sort((a, b) => {
-        return new Date(b.date) - new Date(a.date);
-    });
-
-    // Filter by date if provided
-    let filteredPayments = sortedPayments;
+    // Prepend the initial due row
+    const [y, m, d] = currentMemberData.payment_date.split('-');
+    const initialRow = `
+        <tr>
+            <td>${d}-${m}-${y}</td>
+            <td>${currentMemberData.name}</td>
+            <td style="color: #4CAF50;">+₹${currentMemberData.original_amount.toFixed(2)}</td>
+            <td>No remarks</td>
+        </tr>
+    `;
+    
+    // Sort payment transactions by date (descending)
+    let sortedPayments = [...payments].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Apply date filtering if both dates are provided
     if (fromDate && toDate) {
         const from = new Date(fromDate);
         const to = new Date(toDate);
-        filteredPayments = sortedPayments.filter(payment => {
-            const paymentDate = new Date(payment.date);
-            return paymentDate >= from && paymentDate <= to;
+        sortedPayments = sortedPayments.filter(payment => {
+            const pDate = new Date(payment.date);
+            return pDate >= from && pDate <= to;
         });
     }
-
-    const historyContainer = document.getElementById('paymentHistory').querySelector('tbody');
-    if (filteredPayments.length > 0) {
-        historyContainer.innerHTML = filteredPayments.map(payment => {
-            const [year, month, day] = payment.date.split('-');
-            const formattedDate = `${day}-${month}-${year}`;
-            return `
-                <tr>
-                    <td>${formattedDate}</td>
-                    <td>${currentMemberData.name}</td>
-                    <td>₹${payment.amount_due.toFixed(2)}</td>
-                    <td>₹${payment.amount_paid.toFixed(2)}</td>
-                </tr>
-            `;
-        }).join('');
-    } else {
-        historyContainer.innerHTML = '<tr><td colspan="4" style="text-align: center;">No payments found for the selected period</td></tr>';
-    }
+    
+    const paymentRows = sortedPayments.map(payment => {
+        const [yy, mm, dd] = payment.date.split('-');
+        return `
+            <tr>
+                <td>${dd}-${mm}-${yy}</td>
+                <td>${payment.name}</td>
+                <td style="color: #FF5722;">-₹${payment.amount_paid.toFixed(2)}</td>
+                <td>${payment.remarks}</td>
+            </tr>
+        `;
+    }).join('');
+    
+    const historyHTML = initialRow + paymentRows;
+    document.getElementById('paymentHistory').querySelector('tbody').innerHTML = historyHTML;
 }
 
 function filterPaymentHistory() {
@@ -155,13 +158,17 @@ function updatePaymentChart(payments) {
 
 // Close modal functionality
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('.close-modal').addEventListener('click', () => {
-        const modal = document.getElementById('memberDetailsModal');
-        modal.classList.remove('show');
-        setTimeout(() => modal.style.display = 'none', 300);
-    });
-
-    // Close modal when clicking outside
+    // Attach event listener to the close button within memberDetailsModal specifically
+    const memberModalCloseBtn = document.querySelector('#memberDetailsModal .close-modal');
+    if (memberModalCloseBtn) {
+        memberModalCloseBtn.addEventListener('click', () => {
+            const modal = document.getElementById('memberDetailsModal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        });
+    }
+    
+    // Close memberDetailsModal when clicking outside of it
     window.addEventListener('click', (e) => {
         const modal = document.getElementById('memberDetailsModal');
         if (e.target === modal) {
@@ -169,64 +176,18 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => modal.style.display = 'none', 300);
         }
     });
-
-    // Initialize Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
-        type: 'line',
-        data: {
-            labels: revenueLabels,
-            datasets: [{
-                label: 'Monthly Revenue',
-                data: revenueData,
-                borderColor: '#8A2BE2',
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: {
-                        color: '#fff'
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#fff'
-                    }
-                }
-            }
-        }
-    });
-
-    // Initialize Payment Status Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Paid', 'Pending'],
-            datasets: [{
-                data: statusData,
-                backgroundColor: ['#4CAF50', '#FF9800']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff'
-                    }
-                }
-            }
+    
+    // Attach event listener for the edit transaction modal close button
+    const editModalCloseBtn = document.getElementById('closeEditModal');
+    if (editModalCloseBtn) {
+        editModalCloseBtn.addEventListener('click', closeEditModal);
+    }
+    
+    // Close editTransactionModal when clicking outside of it
+    window.addEventListener('click', (e) => {
+        const editModal = document.getElementById('editTransactionModal');
+        if (e.target === editModal) {
+            closeEditModal();
         }
     });
 });
@@ -295,17 +256,5 @@ document.getElementById('editTransactionForm').addEventListener('submit', functi
     .catch(error => {
         console.error('Error:', error);
         alert('Error updating transaction');
-    });
-});
-
-// Close modal when clicking the close button or outside
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
-    
-    window.addEventListener('click', (e) => {
-        const modal = document.getElementById('editTransactionModal');
-        if (e.target === modal) {
-            closeEditModal();
-        }
     });
 });
